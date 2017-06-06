@@ -1,0 +1,18 @@
+<section ng-controller="ExampleController">
+  <!-- 사용자 인증 추가 전 소스
+    <input type="text" id="text1" ng-model="name" />
+    <input type="text" id="text1" ng-model="name" />
+  -->
+  <div data-ng-show="!authentication.user">
+        <a href="/signup">Signup</a>
+        <a href="/signin">Signin</a>
+    </div>
+    <div data-ng-show="authentication.user">
+        <h1>Hello <span data-ng-bind="authentication.user.username"></span></h1>
+        <a href="/signout">Signout</a>
+        <ul>
+            <li><a href="/#!/articles">List Articles</a></li>
+            <li><a href="/#!/articles/create">Create Article</a></li>
+        </ul>
+    </div>
+</section>

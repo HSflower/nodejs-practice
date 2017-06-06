@@ -1,0 +1,68 @@
+doctype html
+html
+  head
+    title INUS 비즈쿨 Platform
+    meta(charset='utf-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    meta(name='description', content='')
+    meta(name='author', content='')
+    title= title
+    script(src='//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js', async=true)
+    link(rel='stylesheet', href='//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css')
+    //- if lt IE 9
+      script(src='//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.6.2/html5shiv.min.js')
+      script(src='//cdnjs.cloudflare.com/ajax/libs/respond.js/1.3.0/respond.min.js')
+    script
+      //blah blah free texting
+  body
+    //-https://gist.githubusercontent.com/tapmodo/7753558/raw/090ccd97fc283e04730a9ab61ef11d13d243f649/bs3-nav.jade
+    - var navmenu = { INUs: '/inus', Board: '/board' }
+
+    nav.navbar.navbar-inverse(role='navigation')
+      div.navbar-header
+        button(type='button',data-toggle='collapse',data-target='#jcs-navbar-collapse-1').navbar-toggle
+          span.sr-only Toggle navigation
+          span.iconbar
+          span.iconbar
+          span.iconbar
+        a(href='/home').navbar-brand Home
+      div#jcs-navbar-collapse-1.collapse.navbar-collapse
+        ul.nav.navbar-nav
+
+          each href, key in navmenu
+            if key == pagekey
+              li.active: a(href=href)= key
+            else
+              li: a(href=href)= key
+
+          //- dropdown is not work
+          li.dropdown
+            a(href='#',data-toggle='dropdown').dropdown-toggle School
+              b.caret
+            ul.dropdown-menu
+              //-<li role="presentation" class="dropdown-header">Dropdown header</li>
+              li.dropdown-header Dropdown header
+              li.disabled
+                a(href='#') Action
+              li: a(href='#') Another action
+              li: a(href='#') Something else here
+              li.divider
+              li: a(href='#') One more
+
+        form(role='search').navbar-form.navbar-left
+          div.form-group
+            input(type='text',placeholder='Search').form-control
+          | &nbsp;
+          button(type='submit').btn.btn-default Submit
+
+        ul.nav.navbar-nav.navbar-right
+          li: a(href='#') Link
+          li.dropdown
+            a(href='#',data-toggle='dropdown').dropdown-toggle My Account
+              b.caret
+            ul.dropdown-menu
+              li: a(href='#') Account Settings
+              li: a(href='#') Logout
+    block content
+
+    div.footer

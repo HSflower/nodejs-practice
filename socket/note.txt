@@ -1,0 +1,17 @@
+socket.io 실시간 업데이트
+socket.io : 웹소켓을 사용해서 클라이언트에 실시간으로 데이터 전송
+ - 웹소켓이 없을 때, xhr이나 flash사용
+ - 클라이언트 : 이벤트리스너로 대기 --> 실시간 어베디읕
+[예제] 게임이 끝났을 때의 레벨정보를 다른 클라이언트에 실시간 전송
+1. server :
+ - socket.io = socket.js
+ - server.js :
+2. client : 따로 html스크립트로 불러와야함
+
+출처 | https://www.zerocho.com/category/NodeJS/post/57774a8eacbd2e9803de0195
+* package.json에서 scripts/test는 npm run test해쓸때 testscript로 실행됨
+* http는 기본 npm이라 설치할 필요 없음.
+* 80번포트가 기본 인터넷 접속 포트
+createServer 메소드 콜백의 매개변수인 request와 response에 대해서 알아보죠. request는 요청을 담당합니다. 즉 서버로 보내는 요청에 대한 정보가 들어있습니다. 방금 우리가 주소창에 localhost:8080이라고 친 행위도 서버에 그 주소에 해당하는 정보를 달라고 요청한 겁니다. 서버는 항상 대기중이다가 request가 들어올 때 반응하면 됩니다. 그리고 request에 대한 처리를 한 후 결과를 response 객체로 돌려주는 겁니다.
+response는 이제 클라이언트(브라우저)로 돌려줄 응답을 담당합니다. 만약 어떤 정보를 보내고 싶다면 response 객체를 활용하면 됩니다. 지금까지 브라우저에 아무것도 안 뜬 이유는 response를 설정하지 않았기 때문입니다. response가 없다면 브라우저에는 아무 것도 전달되지 않습니다. response는 대부분 페이지를 보내지만, 꼭 페이지만을 보낼 필요는 없습니다. JSON, AJAX나 이미지같은 것도 모두 정보입니다.
+request -> 서버 처리 -> response로 이어지는 흐름을 기억하세요. 한 가지 더 알아둘 점은 request와 response에는 header과 body가 있습니다. header는 request, response에 대한 정보(종류, 크기, 캐시 여부 등등)가 들어있고, body는 진짜 주고받고자 하는 내용이 들어있습니다. 제 홈페이지 주소를 주소창에 입력했을 때의 request와 response의 header 내용입니다. F12(개발자도구)를 누르고 Network 탭에 가면 볼 수 있습니다.

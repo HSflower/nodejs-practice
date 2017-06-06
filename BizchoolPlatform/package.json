@@ -1,0 +1,17 @@
+{
+  "name": "bizchoolplatform",
+  "version": "1.0.0",
+  "description": "board crud and membership",
+  "main": "app.js",
+  "dependencies": {
+    "body-parser": "latest",
+    "compression": "latest",
+    "express": "^4.13.4",
+    "jade": "^1.11.0"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "hanseul",
+  "license": "ISC"
+}

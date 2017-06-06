@@ -1,0 +1,50 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>
+            <%= title %>
+        </title>
+    </head>
+    <body>
+        <!--
+        <% if (user) { %>
+         <a href="/signout">Sign out</a>
+        <% } else { %>
+         <a href="/signup">Signup</a>
+         <a href="/signin">Signin</a>
+        <% } %>
+      -->
+      <!--
+      <section>
+           angular.js의 데이터 결합을 보여주기위한 텍스트 입력창
+              한쪽에 입력하면 바로 옆에 데이터가 동시에 나타남 : 양방향 데이터 결합의 동작
+          <input type="text" id="text1" ng-model="name" />
+          <input type="text" id="text2" ng-model="name" />
+      </section>
+      -->
+      <!--<section ng-include="'example/views/example.client.view.html'"></section>-->
+      <section ng-view></section>
+      <script type="text/javascript">
+        window.user = <%- user||'null' %>
+      </script>
+      <br />
+      <img src="images/overwatchlogo.png" alt="logo" />
+      <!-- 모듈 자바스크립트의 순서도 중요 -->
+      <script type="text/javascript" src="/lib/angular/angular.js"></script>
+      <script type="text/javascript" src="/lib/angular-route/angular-route.js"></script>
+      <script type="text/javascript" src="/lib/angular-resource/angular-resource.js"></script>
+
+      <script type="text/javascript" src="/articles/articles.client.module.js"></script> <!-- 추가 -->
+      <script type="text/javascript" src="/articles/controllers/articles.client.controller.js"></script> <!-- 추가 -->
+      <script type="text/javascript" src="/articles/services/articles.client.service.js"></script> <!-- 추가 -->
+      <script type="text/javascript" src="/articles/config/articles.client.routes.js"></script> <!-- 추가 -->
+
+      <script type="text/javascript" src="/example/example.client.module.js"></script>
+      <script type="text/javascript" src="/example/controllers/example.client.controller.js"></script>
+      <script type="text/javascript" src="/example/config/example.client.routes.js"></script>
+      <script type="text/javascript" src="/users/users.client.module.js"></script>
+      <script type="text/javascript" src="/users/services/authentication.client.service.js"></script>
+
+      <script type="text/javascript" src="/application.js"></script>
+    </body>
+</html>

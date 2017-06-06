@@ -1,0 +1,16 @@
+extends ./layout.jade
+block content
+  div.container
+
+    ul
+      -for(var i=0; i<4; i++)
+        li
+    div= time
+
+    form(action='/form_receiver')
+      p
+        input(type='text' name='title')
+      p
+        textarea(name='description')
+      p
+        input(type='submit')

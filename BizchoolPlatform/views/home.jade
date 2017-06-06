@@ -1,0 +1,20 @@
+extends ./layout.jade
+block content
+    div.container
+      .page-header
+        h1 Hi hello everybody say "JADE!"
+          small Subtext for header
+      .jumbotron
+        h1 Hello, world!
+        p blah blah
+        p:  a.btn.btn-primary.btn-lg(href="#", role="button") Learn more
+      //-<div class="container"> : 최대넓이 안됨
+
+      //- 16:9 aspect ratio = 16by9,  4:3 aspect ratio
+      .embed-responsive.embed-responsive-4by3
+        iframe(width="560", height="315", src="https://www.youtube.com/embed/ykqLaVSGshY", frameborder="0", allowfullscreen="")
+
+      img.img-responsive-center(src="../images/mindpiggy.png")
+      //-Responsive Image
+
+      script(src='//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js', async=true)

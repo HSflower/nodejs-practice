@@ -1,0 +1,364 @@
+webapp파일은 수평폴더 구조로
+각 application파일(여기서는 app)에 MVC파일이 각각 들어있다.
+- 수직폴더 구조라면 application파일안에 기능별로 파일을 나누어서 각 기능별 파일안에 MVC파일이 들어있다.
+
+routes폴더는 express의 라우팅 미들웨어를 위함
+
+최상위폴더의 config파일은 express모듈을 구성하기 위한 파일
+
+외부모듈 추가, 다양한 환경에서 다르게 동작하게 하기 위한 환경
+개발환경에서는 logger 를 보기 원하지만
+상용환경에서는 logger 가 필요 하지 않고 응답데이터를 압축하여 빠르게 사용
+- 이를 구분하기 위해서 전역변수 process.env 속성사용.
+- 미리 정의된 환경변수에 대한 접근을 허용
+- 가장 일반적인 환경 변수는 NODE_ENV
+- 속성사용을 위해 추가할 모듈 :
+  morgan, compression, body-parser, method-override
+  morgan :  로거 미들웨어 제공
+  compression : 응답 압축 지원
+  body-parser : 요청 데이터의 처리
+  method-override : DELETE, PUT 등과 같이 HTTP 동사 지원 기능
+- 환경변수 process.env.NODE_ENV를 변경하기 위해 startapp.js 시작부분에 정의하거나
+  미리 환경구성 집합을 생성 : config/env/development.js와 config.js
+
+뷰 시스템 구성하여 사용자에게 원하는 뷰를 제공
+- 여기서 angular.js이용
+- express의 뷰 생성 메소드 : app.render()-콜백함수에html전달, res.render()-지역적생성,바로return html
+- express의 HTML템플릿엔진 : EJS, JADE
+  - ejs 설치 : package.json또는 설치할 app폴더에서 npm install ejs --save
+              설치 후 express_config.js파일 수정 필요
+  - ejs 뷰 생성 : ejs태그가 섞인 html파일, 확장자 .ejs
+    (app/views/index.ejs)
+  - ejs 뷰를 연결 : app/controllers/index.server.controller.js 수정
+
+MongoDB는 스키마가 없는 데이터베이스
+몽구스 모듈은 몽구스 모델을 사용해 엄격하고 느슨한 스키마 접근 방법 양쪽을 모두 즐기는 기회를 제공
+- mongodb연결=mongodb url이용
+- mongodb URL = mongodb://username:password@hostname:port/database
+  - 위 설정은 express_config.js에서 db변수를 생성하고 uri추가
+  - db주소인 URL을 환경구성파일에도 추가하고,
+  - mongoose의 환경구성파일도 생성 - config/mongoose.js
+- mongod를 따로 실행시키고,
+  startapp(node서버)실행
+- models파일에 model.js로 //Schema 생성자로 UserSchema객체 정의
+- config 폴더에서 mongoose.js파일에 User모델 등록
+- controller의 users.server.controller.js
+  //user모델을 불러와서 user인스턴스를 create생성하고 데이터를 save넣음
+  다음 미들웨어로 데이터 전달
+- 사용자가 해당 컨트롤러로 갈수있도록 경로설정 : app/routes/users.server.routes.js
+* 현재 설정 경로 : C:\data\db, 어디서든 mongod실행 가능
+* nodejs 설정경로 : C:\devhans\js\WebApp에서만 node실행 가능
+- CRUD함수를 controller와 routes에 설정 후,
+  mongodb에 _id데이터 저장 & http://localhost:3000/users/에 실행
+  : user데이터 삽입방법 : post로 json형식으로 데이터 전달
+    user데이터에 변경이나 속성 설정은 user.server.model.js에서 수행
+- mongoose모델에 색인 추가 : unique 옵션 이용
+      index옵션 true설정으로 보조 색인 사용 가능 - 질의 성능 향상
+      * 중복데이터 저장 시 사용 주의
+  mongoose모델에 검증 : required옵션 true - 값의 존재유무, 필수값지정
+    match 옵션 - 패턴 검증
+    enum 옵션 : 열거형 검증 - 열거데이터 이외에는 저장 안함
+    콜백함수 이용 맞춤식 검증 : 검증함수와 오류메시지 포함
+      서버에서의 검증임.
+    DBRef : 문서 데이터간 참조 방식 - 외래키 형식
+    - http://alexband.tistory.com/24 : post data Schema
+
+passport모듈을 이용하여 사용자 인증 : 전략메커니즘
+- 설치 g후 설정 파일 생성(config/passport.js)
+- passport.js파일 생성
+- startapp.js파일 변경
+- config.js의 express_config.js파일 변경 - 미들웨어 추가
+- passport 사용 : 최소한 인증전략1개 등록해야 사용가능
+  1. 지역전략 : 사용자의 이름과 패스워드 인증 제공
+    - passport-local 모듈 설치
+    - 지역전략 구성 : config/strategies폴더 생성
+      전략별로 독자적인 파일 구성하므로 strategies에 local.js파일 생성
+    - config/passport.js파일 추가 : 사용자 직렬화
+    : StartApp.js -> passport.js -> local.js 차례로 읽음.
+    (1) 모델
+    - user모델 변경하여 passport인증 지원
+      app/models/user.server.model.js 수정
+      - UserSchema객체에 필드 추가 : salt(암호해시용), provider(사용자등록에 사용되는 전략), providerId(인증전략을 위한 사용자 식별자 지시), providerData(OAuth공급자로부터 인출한 사용자 객체 저장용)
+      - pre-save미들웨어 생성 : 사용자 비밀번호 해시
+          해당요청이 실행되기 전에 먼저 실행되는 메소드 지정 가능
+          pre미들웨어가 있으면 pre미들웨어 먼저실행하고 데이터 등록
+          여기서는 사용자의 password를 암호화 시켜 저장하는데 사용
+          ( 가상난수해시 솔트 생성해서 , crypto모듈을 활용한 암호화하는 hashPassword함수로 치환, authenticate함수로 현재사용자 비밀번호와 비교,
+           새로운사용자가 선택가능한 유일한 이름을 찾는데 findUniqueUserid메소드 사용-이는 OAuth(트위터,페북 연동로그인)인증 시 사용예정)
+    (2) 뷰
+    - 인증용 ejs View 생성 : app/views/signup.ejs(title출력과, msg리스트변수출력, 회원가입창),
+        app/views/signin.ejs(로그인화면, 타이틀과 메시지 출력)
+    (3) 컨트롤러
+    - user.server.controller 변경 : 여러 메소드 정의 함.
+      // connect-flash모듈 설치 필요 : 세션객체영역에 임시메시지 저장하는 노드모듈
+      // npm install connect-flash --save
+      // express에서 모듈 require : config/express_config.js수정
+        t 사용자 세션영역에 flash영역 생성 됨.
+    - 라우팅 처리 : routes/users.server.routes.js파일에 http메서드에 따른 처리 입력
+    - 사용자에게 보여줄 오류메시지 뷰에서 출력 처리 : index화면
+      사용자의 이름출력되도록 기본경로에 사용자의 이름 변수 추가
+       : app/controllers/index.server.controller.js파일 수정하고,
+         app/views/index.ejs파일 수정
+* test : db저장방식도 확인하기 (salt값, provider=local, password는 암호화)
+
+angular.js 애플리케이션은 최소한 한개의 모듈이 필요하며 , 이 모듈을 애플리케이션 모듈이라고 지칭
+- angular.js 모듈은 angular.module(name, [requires], [configFN]) 메소드를 사용해 생성하고 인출 할 수 있다.
+  - name : 모듈 이름을 정의하는 문자열
+  - requires : 의존성으로 다른 모듈을 정의하는 문자열 배열
+  - configFN : 모듈이 등록될 때 수행될 함수
+<angular.js 의 특징>
+- 양방향 데이터 결합
+  - 항상 Angular.js 애플리케이션이 모델을 뷰와 동기화한 상태로 유지하거나 반대로 뷰를 모델과 동기화한 상태로 유지
+  - 뷰 출력이 항상 모델을 반영함
+  * 일방향 : Meanstack 에서 썼던 EJS템플릿, 모델의 데이터와 템플릿을 합쳐서 HTML 페이지 뷰 제공
+  - HTML 템플릿을 컴파일하기 위해 브라우저를 사용한다.
+  * 양방향 : HTML 템플릿은 실시간 뷰를 생성하기 위한 결합 명령과 특수 지시자를 포함한다.
+    뷰에서 발생하는 어떤 이벤트도 자동으로 모델을 갱신하고,
+    모델에서 발생하는 변경은 즉시 뷰로 전파된다.
+    이는 모델이 항상 애플리케이션 상태를 알려주는 단일 데이터 출처임을 의미하며,
+    개발 과정을 상당히 높은 수준까지 개선할 수 있으며,
+    이는 SPA (Single Page application) 에 아주 어울리는 동작 방식
+- 의존성 주입 : 소프트웨어 디자인 패턴, 제어역전
+  (참고 : http://alexband.tistory.com/28 )
+1. bower를 이용한 의존성 관리
+  - npm install -g bower로 바우어를 설치하고,
+  - 애플리케이션의 최상위 폴더에 bower.json파일 생성( name, version, dependencies )
+  - 패키지 설치 : bower가 bower_components에 패키지 설치하므로 bower의 설치 위치를 변경
+      bower의 기본 패키지 설치 폴더 설정 (최상위폴더에).bowerrc라는 전용구성파일 생성 : static/lib
+  - bower를 이용한 angular.js설치 : bower.json에 angular 추가
+  - bower사용 전, GIT설치
+  - git bash(pwd=최상위폴더위치)에서 bower install로 설치하면 bower의 기본 패키지 설치폴더에 bower.json에 정의한 모듈이 설치됨.
+2. angular.js 사용 : static/application.js 생성
+  // angular.bootstrap()으로 주 애플리케이션 모듈로 angular.js애플리케이션을 시작하게 만든다.
+3. app/views/index.ejs뷰에 angular.js파일 포함
+<!-- angular.js의 데이터 결합을 보여주기위한 텍스트 입력창
+    한쪽에 입력하면 바로 옆에 데이터가 동시에 나타남 : 양방향 데이터 결합의 동작 -->
+4. angular.js 의 MVC엔티티
+- static 폴더에 example폴더 생성해 그 안에 mvc폴더 구성
+(1) 모듈 생성
+- example/example.client.module.js파일에서 앵귤러모듈 생성
+//애플리케이션 페이지에서 모듈파일과, 주앱 모듈의 의존성으로 모듈포함 필요
+//텍스트 입력 창 예제를 제거하고 모듈파일을 올릴 새로운 스크립트로 index.ejs파일을 변경
+(2) 뷰 생성 후 적용
+- app/view/index.ejs파일에 위의 js스크립트 파일 추가
+- static/application.js를 변경하는 방식으로 앱 모듈의 의존성으로 example모듈 추가
+- static/example/views/example.client.view.html파일 생성
+- 위 내용을 index.ejs에 적용
+  : app/views/index.ejs를 변경 - ng-include지시자로 Dom에 템플릿 추가
+(3) 컨트롤러 추가
+*angular.js의 컨트롤러는 생성자 함수.
+*angular.js가 컨트롤러 객체의 새로운 인스턴스를 생성하기 위해 사용
+*ng-controller지시자를 사용할 때, 컨트롤러 인스턴스 생성됨.
+*angular.js 컴파일러는 새로운 컨트롤러 인스턴스를 생성하기 위해 지시자에게 컨트롤러 이름 사용
+* 해당 컨트롤러 인스턴스는 영역 객체를 전달하기 위해 의존성 주입 활용
+  또, 영역 초기 상태를 설정하거나 기능 확장에 사용
+- angular.js컨트롤러 사용
+  static/example/controllers/example.client.controller.js 생성
+- 컨트롤러를 사용하기 위해 app/views/index.ejs스크립트 파일 수정
+- example.client.view.html파일에 controller 속성 연결
+: 컨트롤러 파일에서 설정한대로 텍스트 창에 디폴트문자 자동 입력
+(4) 라우팅 제어
+* 라우팅 기능 제공에는 ng-include지시자도 사용가능, 뷰에서 사용시 지저분
+  angular.js는 사용자가 해당 경로로 탐색할 때 마다 표시될 템플릿과
+              이에 대응하는 URL경로를 정의하게 만드는 ngRoute모듈을 개발
+* angular.js : 단일 페이지 프레임워크
+  검색엔진 로봇이 색인 불가능 - SEO 어려우므로, 단일페이지 애플리케이션이라는 표시 필요
+  -> #!:hashbang이라는 라우팅 정책 사용
+  - 애플리케이션 라우팅 구성 방법
+    : static/application.js 변경
+      모듈 구성블록과 앵귤러의 $locationProvider이용해 해시뱅 구성 지원
+* ngRoute : 브라우저에서 전적으로 라우팅 관리
+    서버에서 웹페이지 가져오는 대신,
+    angular.js가 정의된 템플릿을 읽고, 컴파일하고, DOM내부에 결과 위치.
+    (서버는 정적파일로 템플릿 제공만, URL변경에는 무반응)
+    express서버를 API지향 백엔드로 이용
+- bower를 이용해 ngRoute모듈 설치 : bower.json과 git bash에 bower install명령이용
+- bower로 새로운 의존성 설치 완료 : static/lib/angular-route생성
+- 애플리케이션 페이지에 모듈을 포함
+  : app/views/index.ejs에 angular-route스크립트 추가
+- 애플리케이션 모듈에 ngRoute모듈 추가
+  : static/application.js에서 angular.module()에 ngRoute 추가
+- ngRoute모듈 설정, 구성 완료
+  ngRoute모듈 : 라우팅을 위해 URl해시 사용동작 방식이 기본
+  - URL해시 : 페이지 내부 링크에 사용,
+              해시가 변경될 때, 브라우저는 서버에 요청 안함
+  - 일반적인 angular.js 라우트 : http://localhost:3000/#/example 형태
+(5) 라우터 구성
+* ngRoute모듈은 라우트관리를 위한 핵심엔티티 보유
+  1) $routeProvider객체 : 앵귤러 애플리케이션 라우팅 동작 방식 정의 메소드 제공
+- 모듈 구성 블록 생성, 객체 주입, 객체를 이용한 라우트 정의 단계로 구현
+- static/example/config/example.client.routes.js
+    angular.module()의 인수로 example모듈 사용
+    config()로 새로운 구성블록 생성
+    의존성 주입 : 구성함수에 $routeProvider객체 주입
+    $routeProvider.when() : 새로운 라우트를 정의
+      인수 : 라우트의 URL, 옵션 객체(템플릿URL정의),
+          사용자가 미정의 URL탐색시 라우터 동작방식 정의($routeProvider.otherwise())
+  2) ng-view지시자 (ng-Route 모듈에 포함된 엔티티)
+    : angular.js 라우터에게 라우팅 뷰 출력하기 위해 사용할 DOM요소를 지정
+    ( 명세된 URL을 탐색할 때, 앵귤러가 이 지시자로 표시된 DOM요소의 템플릿을 출력하게 됨.)
+  * 주 애플리케이션 페이지에 js포함시, ng-view지시자를 지정한 요소 추가해야함
+    : 주 앱 페이지인 index.ejs에 js를 포함하므로, index.ejs에 ng-view 속성 보유한 요소 추가
+    ( 기존의 ng-include대신 ng-view사용 + example.client.routes.js스크립트 추가)
+(6) 앵귤러.js의 기본서비스와 인증관리
+1. 인증상태 관리 : angular애플리케이션 부트스트랩시, JSON으로 인증상태 통일
+index.server.controller.js 변경
+views/index.ejs 변경 : h2태그제거 후, window.user이용
+2. angular.js서비스를 이용해 사용자 정보 공유
+1) Authentication 서비스 생성 : 모든 사용자 관련 논리를 포함한 모듈 생성이 기본
+- Users모듈에 모든 사용자 관련 논리 포함
+  : /static/users/services/users.client.module.js 모듈 파일 생성
+    위 파일에 angular모듈 생성
+    /static/users/services/Authentication.client.service.js 서비스 파일 생성
+    위 파일에 angular모듈의 factory함수 이용
+    angular.js서비스에서 온, window.user 객체를 참조 함.
+    /app/views/index.ejs : 주 애플리케이션 페이지에 위의 모듈과 서비스 포함
+* OAuth서비스 사용 : 인증왕복 후 애플리케이션 URl해시(#_=_)를 추가하는 페북의 리다이렉트 버그를 해결하기 위한 변경
+  : /static/application 파일에 조치
+2) angular.js엔티티에 authentication 서비스 주입
+  user 객체를 사용, example 컨트롤러 내부에서 authentication서비스 사용
+[정리] angular.js의 핵심개념과 애플리케이션 아키텍처에 적용하는 방법
+bower를 사용해서 angular.js설치하고, 애플리케이션구조를 잡아서
+angular.js를 부트스트랩하는 방법과 ngRoute모듈을 사용한 애플리케이션 라우팅 정책 구성
+
+모든 것을 연결하여 MongoDB와 연동하여 CRUD 모듈 구성
+(각 CRUD모듈은 express, angular기능을 지원하는 MVC구조)
+( express는 몽구스M, 익스프레스C, 익스프레스 라우트파일 )
+( angular 는 V집합, 앵귤러C, 서비스, 라우팅구성)
+(위를 결합하여 Article CRUD모듈 구축 : 글 입력,수정,삭제 기능)
+1. 익스프레스 부분
+1.1. 몽구스 모델 생성
+  app/models/article.server.model.js으로
+  (1) 몽구스 모델 구성
+  created : 해당 글이 작성된 시간을 저장한다.
+  title : 해당 글의 제목을 저장한다.
+  content : 해당 글의 내용을 저장한다.
+  creator : 해당 글의 작성자정보를 저장
+    Schema.ObjectId(mongoDB의 유니크한 값인 ObjectId)를 저장
+    User 모델을 참조
+  (2) 몽구스 모델 등록 : 익스프레스 컨트롤러에서 사용하기 위해
+  (3) config/mongoose.js 수정 : 애플리케이션에서 모델을 읽도록 수정
+1.2. 익스프레스 컨트롤러(모듈의 비즈니스 논리)
+  app/controllers/article.server.controller.js
+  (몽구스 모델 포함, 오류처리 메소드 추가)
+  ( CRUD 컨트롤러 제작 : app/controllers/article.server.controller.js에 추가 )
+  (1) create() 추가 : HTTP요청내용으로 article모델의 인스턴스 생성
+    creator로 인증된 passport(user) 추가
+    몽구스의 save메소드로 doc저장(성공시 JSON으로 article 객체 반환)
+  (2) list() 추가 : 글 목록 보기
+    find()로 articles 컬렉션에 속한 모든 doc
+    sort()로 created필드 기준 순서 정렬,
+    populate()로 articles객체의 creator속성에 username(user모델참조)필드 추가
+    JSON으로 출력
+  * 익스프레스 라우트 기능을 이용해 article다큐먼트를 출력하는 구현에서 코드 중첩 절약
+  (3) read() : db에 이미 존재하는 article을 읽기위한 연산
+    ( 일종의 RESTful API )
+    라우트 매개변수로 글의 ID필드 전달하는 방식
+    = 서버에 요청시, 경로에 articleID를 매개변수로 포함
+      (app.param()이용, articleID라우트 매개변수를 포함하는 모든 요청에 미들웨어 허용)
+    먼저. article을 참조하는 articleByID()미들웨어 함수를
+      익스프레스 라우트 연결 시, 다양한 라우터에 추가하고,
+      read()메소드로 article 객체 반환(json출력만 함)
+  (4) update() : article객체를 읽고, title, content수정
+    articleByID() 미들웨어로 article객체를 얻고,
+    req.article로 article을 얻고 수정 후 save()로 저장
+  (5) delete() : articleByID()로 article얻고 remove()로 삭제
+  (6) 사용자 인증을 위한 미들웨어 추가 : requireLogin()
+    사용자의 인증유무 확인, 미인증시 컨트롤러() 수행차단
+    user인증 메소드이므로, user컨트롤러에서 구현
+    app/controllers/users.server.controller.js에 추가
+    사용자가 인증되었는지 점검 : passport가 초기화한 isAuthenticated()사용
+    미인증시 인증오류와 HTTP오류코드
+    + 특정 사용자가 특정 행동을 수행하는 인가 점검용 미들웨어 구현
+    : app/controllers/articles.server.controller.js에 추가
+      hasAuthorization() 구현 ( 글 수정과 삭제를 작성자만 수행가능 )
+  모든 메소드와 미들웨어 배치완료, CRUD모듈 수행을 위해 라우트 배선 수행 필요 '는 아래'
+1.3. 익스프레스 라우트 : RESTful API를 컨트롤러(메소드)에  제공
+* RESTful API : 애플리케이션 자원에서 수행할 수 있는 행동집합을 일관성있게 표현하는 서비스 구조
+* RESTful API 규칙 : 자원별URI필요, 자료구조는 보통 JSON(요청내용), 표준HTTP메소드(GET,POST,PUT,DELETE사용)
+  올바른 컨트롤러 메소드를 사용하도록 HTTP요청을 라우팅
+* articles API 아키텍처 설계 : 포함할 라우트 목록
+- GET http://localhost:3000/articles  : 글 목록 반환
+- POST http://localhost:3000/articles  : 새로운 글 생성과 반환
+- GET http://localhost:3000/articles/:articleId  :  이미 존재하는 글 한 개 반환
+- PUT http://localhost:3000/articles/:articleId  :  이미 존재하는 글 한개를 갱신하고 반환
+- DELETE http://localhost:3000/articles/:articleId  : 이미 존재하는 글 한 개를 삭제하고 반환
+: 컨트롤러()는 이미 구현 완료, 미들웨어까지 구현완료.
+(1) 익스프레스 라우트 구현 : app/routes/articles.server.routes.js 생성
+route()로 CRUD연산을 위한 라우트 정의,
+익스프레스의 라우팅메소드로 각 컨트롤러메소드를 HTTP메소드에 배선
+POST메소드에서 로그인이 글작성에 필수이므로, 미들웨어와 C연산 인수로 사용.
+PUT과 DELE메소드도 마찬가지 이유로 미들웨어 사용.
+app.param()으로 articledID매개변수를 포함한 모든 라우트가 articleByID미들웨어 먼저호출하도록 함.
+(2) 익스프레스 애플리케이션 구성 : 새로운 article모델, 라우트 파일 업로드해서 익스프레스 자원사용
+: config/config_express.js 변경해서 라우팅 파일 적용
+(3) ngResource모듈 : 앵귤러엔티티가 RESTful API와 통신
+- ngResource설치 (bower.json으로 설치 - bower update)
+- 메인페이지에 모듈파일을 포함하자
+  : app/views/index.ejs 편집
+- 애플리케이션 모듈을 위한 의존성에 ngResource모듈 추가
+  : static/application.js 변경
+( ngResource모듈 사용준비 완료 )
+* ngResource모듈 : 앵귤러 엔티티에 주입가능한 팩토리 제공
+  $resource팩토리 : 기초 URL과 개발자가 RESTful 종단점과 통신할 수 있는 구성 옵션 집합 사용
+    ngResource모듈을 사용하기 위해 $resource팩토리 메소드 호출 필수
+    인자 : URL, paramDefaults, Actions, Options
+* 기본 자원 메소드 : 호출은 $http서비스 이용
+- get() : GET HTTP 메소드를 사용하며, JSON 객체 응답을 기대한다.
+- save() : POST HTTP 메소드를 사용하며, JSON 객체 응답을 기대한다.
+- query() : GET HTTP 메소드를 사용하며, JSON 객체 응답을 기대한다.
+- remove() : DELETE HTTP 메소드를 사용하며, JSON 객체 응답을 기대한다.
+- delete() : DELETE HTTP 메소드를 사용하며, JSON 객체 응답을 기대한다.
+* resource팩토리 메소드 기본 사용법
+  var Users = $resource('/users/:userId', {
+       userId : '@_id'
+  });
+  var user = Users.get({
+       userId: 123
+  }, function() {
+     user.abc = true;
+     user.$save();
+  });
+//채워진 참조 객체에서 $resource메소드를 사용가능
+//  $resource메소드가 데이터 필드로 채워진 $resource인스턴스를 반환하기 때문에
+1.4. angular.js MVC모듈 구현
+http://localhost:3000/
+- static/articles/articles.client.module.js생성
+- static/application.js에 articles모듈 추가
+- CRUD 모듈이 API 종단점과 쉽게 통신하기 위해 $resource 팩토리 메소드를 활용하는 단일 Angular.js 서비스 사용을 권장
+  static/articles/services/articles.client.service.js 파일 생성
+  ($resource팩토리 사용방식 : 자원 메소드 확장하는 인수)
+- Angular.js모듈 컨트롤러 제작 : 모듈 논리는 angular.js로 구현
+  컨트롤러가 CRUD연산을 수행하기 위해 필요한 모든 메소드 제공
+  static/articles/controllers/articles.client.controller.js파일 생성
+  // 컨트롤러 정의 후,
+  // 정의한 컨트롤러 CRUD구현 메소드 생성
+    create(), find()와 findOne(), update(), delete()
+    컨트롤러 설정을 완료
+- Angular.js 뷰를 구현하고 라우팅 메커니즘에 연결하는 단계
+  1) 뷰생성 :
+    (1) static/articles/views/create-article.client.view.html
+      (텍스트입력창 2개, 제출버튼 = ng-model 지시자로 사용자입력을 컨트롤러 영역에 결합,
+      ng-controller지시자 명세로 articlesController지정,
+      form엘리먼트에 ng-submit지시자 지정 - create()메소드 수행,
+      폼 끝부분 오류메시지 추가(오류발생시 보이기))
+    (2) static/articles/views/view-article.client.view.html
+      (ng-bind지시자로 정보 표현용 HTML요소집합 포함)
+      (create-articl뷰와 같이 ng-controller로 컨트롤러 지정,
+       뷰는 ng-init지시자로 findOne()메소드 호출,
+       ng-show지시자 사용 - 1. update-article뷰로 이동, 2.delete()메소드 호출)
+    (3) static/articles/views/edit-article.client.view.html
+      (create-article과 같은 구성,
+       ng-model지시자를 이용해 사용자입력과 scope.article객체 결합,
+      편집전 글 정보 읽어와야하므로 ng0init지시자로 findOne()메소드 호출,
+       form요소에 ng-submit지시자 지정하여 update()메소드 호출 - 마지막에 error)
+    (4) static/articles/views/list-articles.client.view.html
+      (find메소드를 이용해 글의 컬렉션 get)
+      (반복적인 html요소의 단순집합)
+  2) 각 뷰를 angular.js 애플리케이션 라우팅 메커니즘 연결
+    static/articles/config/articles.client.routes.js 생성
+    // 각 뷰는 독자적인 라우트에 할당, URL에 articleID라우트 매개변수로 $routeParams서비스 사용해 매개변수 추출
+  3) 모듈 js파일을 주애플리케이션 페이지에 포함, 새로운 모듈라우터에 적절한 링크를 보여주도록
+    app/views/index.ejs 수정 : 모듈 자바스크립트 파일 추가
+  4) 사용자 인증 부분 : 첫번째 화면에 두 링크 추가
+    static/example/views/example.client.view.html수정
